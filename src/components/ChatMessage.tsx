@@ -38,6 +38,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   const [isThinkingOpen, setIsThinkingOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  console.log('message is ',message)
+
   // Multi-choice state inside this message
   const [selectedMultiIds, setSelectedMultiIds] = useState<string[]>(
     message.widget?.selectedIds || message.widget?.options?.map((o) => o.id) || []

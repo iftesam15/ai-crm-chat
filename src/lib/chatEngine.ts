@@ -68,7 +68,8 @@ export function processUserInteraction(
 ): { response: ChatMessage; updatedState: ChatSessionState; crmAction?: { type: 'ADD_PIPELINE' | 'UPDATE_DEAL'; data: any } } {
   const normalized = userText.toLowerCase().trim();
   const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
+   
+  
   // 1. WORKFLOW: PIPELINE CREATION
   if (
     normalized.includes('build') ||
