@@ -1,0 +1,54 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Pipeline {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  type        String          @default("enterprise")
+  createdAt   DateTime        @default(now())
+  stages      PipelineStage[]
+  deals       Deal[]
+}
+
+model PipelineStage {
+  id          String   @id @default(uuid())
+  name        String
+  order       Int
+  probability Int
+  color       String   @default("#3b82f6")
+  pipelineId  String
+  pipeline    Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+}
+
+model Deal {
+  id            String    @id @default(uuid())
+  name          String
+  company       String
+  value         Float
+  stageName     String
+  probability   Int
+  owner         String
+  expectedClose String
+  contactName   String?
+  contactEmail  String?
+  pipelineId    String?
+  pipeline      Pipeline? @relation(fields: [pipelineId], references: [id])
+}
+
+model Contact {
+  id           String  @id @default(uuid())
+  name         String
+  email        String
+  company      String
+  role         String
+  status       String  @default("Lead")
+  lastActivity String?
+  dealValue    Float?
+}
