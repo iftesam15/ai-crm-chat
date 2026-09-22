@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Claude CRM | Interactive AI Sales Pipeline & Deal Intelligence
 
-## Getting Started
+An interactive AI-powered CRM assistant and sales pipeline builder inspired by Claude's conversational interface. Powered by **Next.js 16**, **Mastra Agent Framework**, **Google Gemini** (`gemini-3.1-flash-lite`), and **Prisma SQLite**.
 
-First, run the development server:
+## Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Claude CRM allows sales teams to interactively query deal intelligence, analyze revenue metrics, and build bespoke sales pipelines either from predefined sales motions or completely from scratch using visual builder widgets and natural language prompts.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Key Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Claude-like Conversational UI**: Interactive single-choice cards, multi-stage selection checkboxes, expandable reasoning blocks, and visual preview cards.
+- **Custom Pipeline Architect (From Scratch)**: Design bespoke sales pipelines with custom names, custom stages, and configurable win conversion probabilities.
+- **Mastra Agent Framework**: Live database tool calling (`createPipeline`, `getDeals`, `getCrmStats`, `getContacts`, `updateDeal`) to query and mutate SQLite without context stuffing.
+- **Prisma & SQLite Database**: Persistent relational database schema (`prisma/schema.prisma`) tracking pipelines, stages, deals, and contacts.
+- **CRM Records Explorer**: Dedicated page at `/records` with financial KPIs, stage filtering, and deals table, alongside a sliding drawer inspector on `/`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Branches
 
-## Learn More
+- **`main`**: Repository baseline documentation.
+- **`dev`**: Active development branch containing the complete application codebase.
 
-To learn more about Next.js, take a look at the following resources:
+## Quick Start (Development)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Clone and checkout the `dev` branch**:
+   ```bash
+   git clone https://github.com/iftesam15/ai-crm-chat.git
+   cd ai-crm-chat
+   git checkout dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-## Deploy on Vercel
+3. **Configure Environment Variables**:
+   ```bash
+   cp .env.example .env.local
+   # Set your Gemini API key in .env.local:
+   # GEMINI_API_KEY="your-gemini-api-key"
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. **Initialize SQLite Database**:
+   ```bash
+   npx prisma db push
+   npx tsx prisma/seed.ts
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. **Start Development Server**:
+   ```bash
+   npm run dev
+   ```
+
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
