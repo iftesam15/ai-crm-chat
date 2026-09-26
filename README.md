@@ -36,14 +36,16 @@ Claude CRM allows sales teams to interactively query deal intelligence, analyze 
 3. **Configure Environment Variables**:
    ```bash
    cp .env.example .env.local
+   cp .env.example .env
    # Set your Gemini API key in .env.local:
    # GEMINI_API_KEY="your-gemini-api-key"
+   # Prisma CLI reads DATABASE_URL from .env (not .env.local).
    ```
 
 4. **Initialize SQLite Database**:
    ```bash
    npx prisma db push
-   npx tsx prisma/seed.ts
+   npx prisma db seed
    ```
 
 5. **Start Development Server**:

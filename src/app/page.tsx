@@ -19,10 +19,11 @@ import {
   ChatMessage as ChatMessageType,
   ChatSessionState,
   generateInitialGreeting,
+  processUserInteraction,
 } from '@/lib/chatEngine';
 
 export default function Home() {
-  // CRM Database State (fetched from backend)
+  // CRM Database State (frontend mock — seeded locally, no backend)
   const [pipelines, setPipelines] = useState<Pipeline[]>(INITIAL_PIPELINES);
   const [deals, setDeals] = useState<Deal[]>(INITIAL_DEALS);
   const [contacts, setContacts] = useState<Contact[]>(INITIAL_CONTACTS);
@@ -32,7 +33,7 @@ export default function Home() {
   const [sessionState, setSessionState] = useState<ChatSessionState>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // API Key & Modal State
+  // API Key & Modal State (kept for UI; chat uses local mock engine)
   const [apiKey, setApiKey] = useState<string>('');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
 
@@ -42,7 +43,7 @@ export default function Home() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize Greeting & load key from localStorage & fetch backend CRM state
+  // Initialize greeting + optional stored API key (mock CRM uses INITIAL_* seed data)
   useEffect(() => {
     setMessages([generateInitialGreeting()]);
 
@@ -50,18 +51,6 @@ export default function Home() {
     if (storedKey) {
       setApiKey(storedKey);
     }
-
-    // Fetch live CRM data from backend API
-    fetch('/api/crm')
-      .then((res) => res.json())
-      .then((json) => {
-        if (json?.data) {
-          setPipelines(json.data.pipelines);
-          setDeals(json.data.deals);
-          setContacts(json.data.contacts);
-        }
-      })
-      .catch((err) => console.error('Failed to load initial CRM data from backend:', err));
   }, []);
 
   // Theme synchronization
@@ -80,13 +69,12 @@ export default function Home() {
 
   const crmStats = calculateCrmStats(deals, pipelines, contacts);
 
-  // Handle user sending a prompt or clicking an option
+  // Frontend-only mock: pipeline wizard + CRM replies via chatEngine (no /api/chat)
   const handleSendMessage = async (userText: string) => {
     if (!userText.trim()) return;
 
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // 1. Add user message
     const userMsg: ChatMessageType = {
       id: `usr-${Date.now()}`,
       role: 'user',
@@ -97,94 +85,77 @@ export default function Home() {
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
 
+    // Brief delay so the loading indicator feels like a co-pilot response
+    await new Promise((resolve) => setTimeout(resolve, 450));
+
     try {
-      // 2. Call backend /api/chat route
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(apiKey ? { 'x-gemini-key': apiKey } : {}),
-        },
-        body: JSON.stringify({
-          message: userText,
-          history: [...messages, userMsg],
-          sessionState,
-        }),
+      const { response, updatedState, crmAction } = processUserInteraction(
+        userText,
+        sessionState,
+        { deals, pipelines, contacts }
+      );
+
+      if (crmAction?.type === 'ADD_PIPELINE') {
+        setPipelines((prev) => [...prev, crmAction.data as Pipeline]);
+      } else if (crmAction?.type === 'UPDATE_DEAL') {
+        const patch = crmAction.data as { id: string; stageName: string; probability: number };
+        setDeals((prev) =>
+          prev.map((d) =>
+            d.id === patch.id
+              ? { ...d, stageName: patch.stageName, probability: patch.probability }
+              : d
+          )
+        );
+      }
+
+      const isPipelineSaved =
+        response.content?.includes('Pipeline Successfully') ||
+        response.widget?.isDeployed ||
+        (updatedState.pendingWorkflow === null &&
+          Boolean(sessionState.pipelineDraft?.stages));
+
+      setMessages((prev) => {
+        const updatedPrev = isPipelineSaved
+          ? prev.map((m) => {
+              if (m.widget?.type === 'pipeline_preview') {
+                return {
+                  ...m,
+                  widget: {
+                    ...m.widget,
+                    actionText: undefined,
+                    isDeployed: true,
+                  },
+                };
+              }
+              return m;
+            })
+          : prev;
+
+        return [...updatedPrev, response];
       });
-
-      if (!res.ok) {
-        throw new Error(`Server returned error status: ${res.status}`);
-      }
-
-      const data = await res.json();
-
-      if (data?.message) {
-        setMessages((prev) => {
-          const isPipelineSaved =
-            data.message.content?.includes('Pipeline Successfully') ||
-            data.message.widget?.isDeployed ||
-            data.updatedState?.pendingWorkflow === null;
-
-          const updatedPrev = isPipelineSaved
-            ? prev.map((m) => {
-                if (m.widget?.type === 'pipeline_preview') {
-                  return {
-                    ...m,
-                    widget: {
-                      ...m.widget,
-                      actionText: undefined,
-                      isDeployed: true,
-                    },
-                  };
-                }
-                return m;
-              })
-            : prev;
-
-          return [...updatedPrev, data.message];
-        });
-      }
-
-      if (data?.updatedState) {
-        setSessionState(data.updatedState);
-      }
-
-      // Sync updated CRM store state from backend
-      if (data?.crmSnapshot) {
-        setPipelines(data.crmSnapshot.pipelines);
-        setDeals(data.crmSnapshot.deals);
-        setContacts(data.crmSnapshot.contacts);
-      }
-    } catch (error: any) {
-      console.error('Chat error:', error);
-      const errorMsg: ChatMessageType = {
-        id: `err-${Date.now()}`,
-        role: 'assistant',
-        content: `⚠️ Failed to connect to backend: ${error.message}. Please check if the server is running.`,
-        timestamp: time,
-      };
-      setMessages((prev) => [...prev, errorMsg]);
+      setSessionState(updatedState);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Chat mock error:', error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: 'assistant',
+          content: `⚠️ Co-pilot mock failed: ${message}`,
+          timestamp: time,
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResetCrmData = async () => {
-    try {
-      const res = await fetch('/api/crm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reset' }),
-      });
-      const json = await res.json();
-      if (json?.data) {
-        setPipelines(json.data.pipelines);
-        setDeals(json.data.deals);
-        setContacts(json.data.contacts);
-      }
-    } catch (err) {
-      console.error('Failed to reset CRM DB:', err);
-    }
+  const handleResetCrmData = () => {
+    setPipelines(INITIAL_PIPELINES);
+    setDeals(INITIAL_DEALS);
+    setContacts(INITIAL_CONTACTS);
+    setSessionState({});
   };
 
   const handleClearChat = () => {
@@ -283,7 +254,7 @@ export default function Home() {
                 />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                <span>Backend is processing via {apiKey ? 'Google Gemini 2.5' : 'CRM dialogue engine'}...</span>
+                <span>Co-pilot is building your response...</span>
               </div>
             </div>
           )}

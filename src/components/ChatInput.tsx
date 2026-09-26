@@ -42,10 +42,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const starterPrompts = [
-    { label: '🔨 Build Sales Pipeline', prompt: 'I want to build a new sales pipeline with options.' },
-    { label: '📊 Deals in Negotiation', prompt: 'Show me all deals in contract negotiation with revenue.' },
-    { label: '📈 Calculate Pipeline ARR', prompt: 'What is our total active pipeline ARR and weighted forecast?' },
-    { label: '⚡ Close Acme Deal', prompt: 'Move Acme Corp deal to Closed Won.' },
+    {
+      label: '🔨 Build Sales Pipeline',
+      prompt: 'I want to build a new sales pipeline with options.',
+    },
+    {
+      label: '✨ Custom Pipeline From Scratch',
+      prompt: 'Build a pipeline from scratch with a custom funnel designer.',
+    },
+    {
+      label: '📊 Deals in Negotiation',
+      prompt: 'Show me all deals in contract negotiation with revenue.',
+    },
+    {
+      label: '📈 Calculate Pipeline ARR',
+      prompt: 'What is our total active pipeline ARR and weighted forecast?',
+    },
   ];
 
   return (
